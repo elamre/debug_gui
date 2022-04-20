@@ -5,13 +5,13 @@ import (
 	"github.com/elamre/tentsuyu"
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
-
-	"image/color"
 )
 
 type DebugButtonPressedAction func(button *DebugButton, stateChanger common.StateChanger, gameState tentsuyu.GameState)
 
 type DebugButton struct {
+	rectHelper *common.RectangleHelper
+
 	Text           string
 	Action         DebugButtonPressedAction
 	selected       bool
@@ -20,7 +20,7 @@ type DebugButton struct {
 }
 
 func NewDebugButton(text string, Action DebugButtonPressedAction) *DebugButton {
-	return &DebugButton{Text: text, Action: Action, enabled: true}
+	return &DebugButton{Text: text, Action: Action, enabled: true, rectHelper: common.NewRectangleHelper()}
 }
 
 func (b *DebugButton) SetAction(d DebugButtonPressedAction) *DebugButton {
@@ -60,16 +60,15 @@ func (b *DebugButton) Update(input *tentsuyu.InputController, positionX, positio
 	}
 }
 func (b *DebugButton) Draw(positionX, positionY, width, height float64, screen *ebiten.Image, camera *tentsuyu.Camera) {
-	var drawClr color.Color
+	b.rectHelper.Reset()
 	if b.selected {
-		drawClr = color.RGBA{R: 0, G: 255, B: 0, A: 255}
+		b.rectHelper.SetColor(float32(0), float32(1), float32(0), 1)
 	} else {
-		drawClr = color.RGBA{R: 255, G: 0, B: 0, A: 255}
+		b.rectHelper.SetColor(float32(1), float32(0), float32(0), 1)
 	}
-	tentsuyu.DrawLine(screen, positionX, positionY, positionX, positionY+height, drawClr, camera)
-	tentsuyu.DrawLine(screen, positionX+width, positionY, positionX+width, positionY+height, drawClr, camera)
-	tentsuyu.DrawLine(screen, positionX, positionY, positionX+width, positionY, drawClr, camera)
-	tentsuyu.DrawLine(screen, positionX, positionY+height, positionX+width, positionY+height, drawClr, camera)
+	b.rectHelper.AddRectangle(float32(positionX), float32(positionY), float32(width), float32(height))
+	b.rectHelper.Draw(screen)
+
 	textLen := len(b.Text) * 6
 	ebitenutil.DebugPrintAt(screen, b.Text, int(positionX+(width/2)-(float64(textLen)/2)), int(positionY))
 }

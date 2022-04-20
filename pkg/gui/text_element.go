@@ -5,11 +5,12 @@ import (
 	"github.com/elamre/tentsuyu"
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
-
-	"image/color"
+	"strings"
 )
 
 type DebugTextElement struct {
+	rectHelper *common.RectangleHelper
+
 	characters   int
 	Text         []string
 	backspaceWas bool
@@ -24,7 +25,19 @@ func NewDebugTextElement(characters int) *DebugTextElement {
 		Text:         make([]string, 0),
 		backspaceWas: false,
 		enabled:      true,
+		rectHelper:   common.NewRectangleHelper(),
 	}
+}
+
+func NewDebugTextElementWithText(text string) *DebugTextElement {
+	d := &DebugTextElement{
+		characters:   len(text),
+		Text:         strings.Split(text, "\n"),
+		backspaceWas: false,
+		enabled:      true,
+		rectHelper:   common.NewRectangleHelper(),
+	}
+	return d
 }
 
 func (b *DebugTextElement) IsEnabled() bool { return b.enabled }
@@ -43,8 +56,11 @@ func (d *DebugTextElement) Update(input *tentsuyu.InputController, positionX, po
 }
 
 func (d *DebugTextElement) Draw(positionX, positionY, width, height float64, screen *ebiten.Image, camera *tentsuyu.Camera) {
-	drawClr := color.RGBA{R: 80, G: 80, B: 80, A: 255}
-	ebitenutil.DrawRect(screen, positionX, positionY, width, height, drawClr)
+	d.rectHelper.Reset()
+	d.rectHelper.SetColor(0.1, 0.1, 0.1, 1)
+	d.rectHelper.AddRectangle(float32(positionX), float32(positionY), float32(width), float32(height))
+	d.rectHelper.Draw(screen)
+
 	if float64(len(d.Text))*16 > height {
 		d.Text = d.Text[1:]
 	}

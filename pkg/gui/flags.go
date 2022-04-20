@@ -1,6 +1,6 @@
 package gui
 
-type ContainerFlag uint32
+type ContainerFlag uint64
 
 const (
 	EXTEND_WIDTH             = ContainerFlag(0b0000_0000_0000_0001) // Extend element to screen width
@@ -22,6 +22,8 @@ const (
 	ANCHOR_RIGHT             = ContainerFlag(0b0010_0000_0000_0000)
 	ANCHOR_UP                = ContainerFlag(0b0100_0000_0000_0000)
 	ANCHOR_DOWN              = ContainerFlag(0b1000_0000_0000_0000)
+	SCROLL_VERT              = ContainerFlag(0b0001_0000_0000_0000_0000)
+	SCROLL_HOR               = ContainerFlag(0b0010_0000_0000_0000_0000)
 )
 
 func (c ContainerFlag) CheckValid() {
@@ -29,7 +31,7 @@ func (c ContainerFlag) CheckValid() {
 	if anchorSum == (ANCHOR_UP|ANCHOR_DOWN) || (anchorSum == (ANCHOR_RIGHT | ANCHOR_LEFT)) {
 		panic("Invalid anchor")
 	}
-	if c&(ANCHOR_LEFT  | ANCHOR_UP | ANCHOR_DOWN| ANCHOR_RIGHT) !=0  && c&POS_FLOATING == POS_FLOATING {
+	if c&(ANCHOR_LEFT|ANCHOR_UP|ANCHOR_DOWN|ANCHOR_RIGHT) != 0 && c&POS_FLOATING == POS_FLOATING {
 		panic("Cant anchor and float")
 	}
 	if (c&STACK_HORIZONTAL == STACK_HORIZONTAL) && (c&ALIGN_LEFT != c&ALIGN_LEFT && c&ALIGN_RIGHT != ALIGN_RIGHT) {

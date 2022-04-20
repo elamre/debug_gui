@@ -3,10 +3,10 @@ package gui
 import (
 	"fmt"
 	"github.com/elamre/debug_gui/pkg/common"
+	"github.com/elamre/go_helpers/pkg/slice_helpers"
 	"github.com/elamre/tentsuyu"
 	"github.com/hajimehoshi/ebiten/v2"
-	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
-	"image/color"
+	"log"
 	"math/rand"
 )
 
@@ -28,6 +28,14 @@ type Container struct {
 	percentageWidth, percentageHeight    float64
 	r, g, b                              float64
 	Name                                 string
+	rectHelper                           *common.RectangleHelper
+	DrawRect                             bool
+	active                               bool
+}
+
+func (c *Container) SetActive(active bool) {
+	c.DrawRect = active
+	c.active = active
 }
 
 func (c Container) String() string {
@@ -45,6 +53,9 @@ func newEmptyContainer(flag ContainerFlag) *Container {
 		b:                  rand.Float64(),
 		g:                  rand.Float64(),
 		Flag:               flag,
+		rectHelper:         common.NewRectangleHelper(),
+		DrawRect:           true,
+		active:             true,
 	}
 }
 
@@ -95,19 +106,17 @@ func (c *Container) SetParent(parent *Container) *Container {
 }
 
 func (c *Container) Draw(screen *ebiten.Image, camera *tentsuyu.Camera) {
-
-	op := &ebiten.DrawImageOptions{}
-	op.GeoM.Scale(c.pixelWidth, c.pixelHeight)
-	op.GeoM.Translate(c.positionX, c.positionY)
-	op.ColorM.Scale(c.r, c.g, c.b, 0.3)
-	screen.DrawImage(tentsuyu.Pixel, op)
-
-	drawClr := color.RGBA{R: 0, G: 255, B: 0, A: 255}
-	// ebitenutil.DebugPrintAt(screen, c.Name, int(c.positionX), int(c.positionY)) //  TODO add some flag for this
-	ebitenutil.DrawLine(screen, c.positionX, c.positionY, c.positionX, c.positionY+c.pixelHeight, drawClr)
-	ebitenutil.DrawLine(screen, c.positionX+c.pixelWidth, c.positionY, c.positionX+c.pixelWidth, c.positionY+c.pixelHeight, drawClr)
-	ebitenutil.DrawLine(screen, c.positionX, c.positionY, c.positionX+c.pixelWidth, c.positionY, drawClr)
-	ebitenutil.DrawLine(screen, c.positionX, c.positionY+c.pixelHeight, c.positionX+c.pixelWidth, c.positionY+c.pixelHeight, drawClr)
+	if !c.active {
+		return
+	}
+	if c.DrawRect {
+		c.rectHelper.Reset()
+		c.rectHelper.SetColor(float32(c.r), float32(c.g), float32(c.b), 0.3)
+		c.rectHelper.AddFilledRectangle(float32(c.positionX), float32(c.positionY), float32(c.pixelWidth), float32(c.pixelHeight))
+		c.rectHelper.SetColor(float32(c.r), float32(c.g), float32(c.b), 1)
+		c.rectHelper.AddRectangle(float32(c.positionX), float32(c.positionY), float32(c.pixelWidth), float32(c.pixelHeight))
+		c.rectHelper.Draw(screen)
+	}
 
 	for i := range c.children {
 		c.children[i].Draw(screen, camera)
@@ -116,7 +125,11 @@ func (c *Container) Draw(screen *ebiten.Image, camera *tentsuyu.Camera) {
 	for i := range c.elements {
 		if c.elements[i].element.IsEnabled() {
 			coordinates := c.elementToPosition[c.elements[i]]
-			c.elements[i].Draw(coordinates.positionX, coordinates.positionY, coordinates.width, coordinates.height, screen, camera)
+			if coordinates.positionY+coordinates.height > (c.pixelHeight + c.positionY) {
+				log.Printf("%f + %f = %f > %f", coordinates.positionY, coordinates.height, coordinates.positionY+coordinates.height, c.pixelHeight+c.positionY)
+			} else {
+				c.elements[i].Draw(coordinates.positionX, coordinates.positionY, coordinates.width, coordinates.height, screen, camera)
+			}
 		}
 	}
 }
@@ -281,6 +294,9 @@ func (c *Container) calculateElementPositioning() {
 }
 
 func (c *Container) Update(input *tentsuyu.InputController, stateChanger common.StateChanger, gameState tentsuyu.GameState) {
+	if !c.active {
+		return
+	}
 	for i := range c.children {
 		c.children[i].Update(input, stateChanger, gameState)
 	}
@@ -292,6 +308,11 @@ func (c *Container) Update(input *tentsuyu.InputController, stateChanger common.
 
 func (c *Container) AddElement(element *Element) {
 	c.elements = append(c.elements, element)
+	c.calculateElementPositioning()
+}
+
+func (c *Container) RemoveElement(element *Element) {
+	c.elements = slice_helpers.RemoveFromList(element, c.elements)
 	c.calculateElementPositioning()
 }
 

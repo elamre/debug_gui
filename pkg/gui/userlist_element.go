@@ -5,7 +5,6 @@ import (
 	"github.com/elamre/tentsuyu"
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
-	"image/color"
 	"strings"
 	"sync"
 )
@@ -16,6 +15,8 @@ type DebugPlayer struct {
 }
 
 type DebugUserListElement struct {
+	rectHelper *common.RectangleHelper
+
 	enabled    bool
 	users      []*DebugPlayer
 	ownName    string
@@ -27,6 +28,7 @@ func NewDebugUserListElement() *DebugUserListElement {
 		enabled:    true,
 		users:      make([]*DebugPlayer, 0),
 		usersMutex: sync.Mutex{},
+		rectHelper: common.NewRectangleHelper(),
 	}
 
 	return d
@@ -70,9 +72,11 @@ func (d *DebugUserListElement) Update(input *tentsuyu.InputController, positionX
 func (b *DebugUserListElement) IsEnabled() bool { return b.enabled }
 
 func (d *DebugUserListElement) Draw(positionX, positionY, width, height float64, screen *ebiten.Image, camera *tentsuyu.Camera) {
-	drawClr := color.RGBA{R: 30, G: 30, B: 30, A: 255}
-	ebitenutil.DrawRect(screen, positionX, positionY, width, height, drawClr)
-	ebitenutil.DebugPrintAt(screen, d.ownName, int(positionX), int(positionY))
+	d.rectHelper.Reset()
+	d.rectHelper.SetColor(0.9, 0.9, 0.9, 1)
+	d.rectHelper.AddRectangle(float32(positionX), float32(positionY), float32(width), float32(height))
+	d.rectHelper.Draw(screen)
+
 	for i, u := range d.users {
 		ebitenutil.DebugPrintAt(screen, u.Name, int(positionX), int(positionY)+((i+1)*16))
 	}

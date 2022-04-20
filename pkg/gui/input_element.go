@@ -5,7 +5,6 @@ import (
 	"github.com/elamre/tentsuyu"
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
-	"image/color"
 	"strings"
 )
 
@@ -24,6 +23,7 @@ func validateInput(input string) string {
 }
 
 type DebugInputElement struct {
+	rectHelper   *common.RectangleHelper
 	characters   int
 	Text         string
 	backspaceWas bool
@@ -40,6 +40,7 @@ func NewDebugInputElement(characters int) *DebugInputElement {
 		Text:         "",
 		backspaceWas: false,
 		enabled:      true,
+		rectHelper:   common.NewRectangleHelper(),
 	}
 }
 
@@ -82,11 +83,11 @@ func (d *DebugInputElement) Update(input *tentsuyu.InputController, positionX, p
 }
 
 func (d *DebugInputElement) Draw(positionX, positionY, width, height float64, screen *ebiten.Image, camera *tentsuyu.Camera) {
-	var drawClr color.Color
+	d.rectHelper.Reset()
 	if d.selected {
-		drawClr = color.RGBA{R: 0, G: 255, B: 0, A: 255}
+		d.rectHelper.SetColor(0.3, 0.3, 0.3, 0.5)
 	} else {
-		drawClr = color.RGBA{R: 255, G: 0, B: 0, A: 255}
+		d.rectHelper.SetColor(0.1, 0.1, 0.1, 0.5)
 	}
 	if len(d.description) > 0 {
 		ebitenutil.DebugPrintAt(screen, d.description, int(positionX), int(positionY))
@@ -94,10 +95,8 @@ func (d *DebugInputElement) Draw(positionX, positionY, width, height float64, sc
 		positionX += descLen
 		width -= descLen
 	}
-	tentsuyu.DrawLine(screen, positionX, positionY, positionX, positionY+height, drawClr, camera)
-	tentsuyu.DrawLine(screen, positionX+width, positionY, positionX+width, positionY+height, drawClr, camera)
-	tentsuyu.DrawLine(screen, positionX, positionY, positionX+width, positionY, drawClr, camera)
-	tentsuyu.DrawLine(screen, positionX, positionY+height, positionX+width, positionY+height, drawClr, camera)
+	d.rectHelper.AddRectangle(float32(positionX), float32(positionY), float32(width), float32(height))
+	d.rectHelper.Draw(screen)
 	ebitenutil.DebugPrintAt(screen, d.Text, int(positionX)+2, int(positionY))
 }
 
