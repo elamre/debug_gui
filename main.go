@@ -26,6 +26,7 @@ func main() {
 	borderContainer = gui.NewBaseContainer(0, 0, WIDTH, HEIGHT)
 	canvasContainer := gui.NewContainer(0, 0, 0.9, 0.9, gui.ANCHOR_HORIZONTAL_CENTER|gui.ANCHOR_VERTICAL_CENTER)
 	canvasContainer.SetParent(borderContainer)
+	canvasContainer.SetActive(true)
 
 	chatBox = composition.NewChatComposition(0, 0, 0.3, 1, canvasContainer, gui.ANCHOR_RIGHT)
 	userOne := gui.DebugPlayer{Name: "Elmar"}
@@ -45,6 +46,11 @@ func main() {
 	lobby.CreateRoomButtonAction = func(roomName string) {
 		lobby.RoomCreated(&composition.Room{Name: roomName})
 	}
+
+	p := gui.NewPopupContainer(20, 20, 200, 200)
+	p.SetMovable(true)
+	p.SetParent(canvasContainer)
+	canvasContainer.SetFocus(p.Container)
 
 	_ = lobby
 	if err := ebiten.RunGame(&TestGame{}); err != nil {

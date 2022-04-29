@@ -17,6 +17,7 @@ type PositionSizeParameters struct {
 
 type Container struct {
 	Flag                                 ContainerFlag
+	FocusContainer                       *Container
 	parent                               *Container
 	children                             []*Container
 	childrenToPosition                   map[*Container]PositionSizeParameters
@@ -31,6 +32,8 @@ type Container struct {
 	rectHelper                           *common.RectangleHelper
 	DrawRect                             bool
 	active                               bool
+
+	updateSpecifics func(input *tentsuyu.InputController, stateChanger common.StateChanger, gameState tentsuyu.GameState)
 }
 
 func (c *Container) SetActive(active bool) {
@@ -56,6 +59,7 @@ func newEmptyContainer(flag ContainerFlag) *Container {
 		rectHelper:         common.NewRectangleHelper(),
 		DrawRect:           true,
 		active:             true,
+		updateSpecifics:    emptySpecificsUpdate,
 	}
 }
 
@@ -92,6 +96,10 @@ func NewContainer(positionX, positionY, percentageWidth, percentageHeight float6
 	c.percentageWidth = percentageWidth
 	c.percentageHeight = percentageHeight
 	return c
+}
+
+func (c *Container) SetFocus(container *Container) {
+	c.FocusContainer = container
 }
 
 func (c *Container) SetParent(parent *Container) *Container {
@@ -138,6 +146,15 @@ func (c *Container) calculateContainerPositioning() {
 	var previousPositionX = c.positionX
 	var previousPositionY = c.positionY
 	for i := range c.children {
+		if c.children[i].Flag&POS_FLOATING == POS_FLOATING {
+			c.childrenToPosition[c.children[i]] = PositionSizeParameters{
+				positionX: c.children[i].originalPositionX,
+				positionY: c.children[i].originalPositionY,
+				width:     c.children[i].pixelWidth,
+				height:    c.children[i].pixelHeight,
+			}
+			continue
+		}
 		positionX := c.positionX + c.children[i].originalPositionX
 		positionY := c.positionY + c.children[i].originalPositionY
 
@@ -293,12 +310,21 @@ func (c *Container) calculateElementPositioning() {
 	}
 }
 
+func emptySpecificsUpdate(input *tentsuyu.InputController, stateChanger common.StateChanger, gameState tentsuyu.GameState) {
+}
+
 func (c *Container) Update(input *tentsuyu.InputController, stateChanger common.StateChanger, gameState tentsuyu.GameState) {
 	if !c.active {
 		return
 	}
+	if c.FocusContainer != nil {
+		c.FocusContainer.Update(input, stateChanger, gameState)
+		c.FocusContainer.updateSpecifics(input, stateChanger, gameState)
+		return
+	}
 	for i := range c.children {
 		c.children[i].Update(input, stateChanger, gameState)
+		c.children[i].updateSpecifics(input, stateChanger, gameState)
 	}
 	for i := range c.elements {
 		coordinates := c.elementToPosition[c.elements[i]]
@@ -314,6 +340,26 @@ func (c *Container) AddElement(element *Element) {
 func (c *Container) RemoveElement(element *Element) {
 	c.elements = slice_helpers.RemoveFromList(element, c.elements)
 	c.calculateElementPositioning()
+}
+
+func (c *Container) Delete() {
+	for _, child := range c.children {
+		child.Delete()
+	}
+	for _, child := range c.children {
+		c.children = slice_helpers.RemoveFromList(child, c.children)
+		delete(c.childrenToPosition, child)
+	}
+
+}
+
+func (c *Container) RemoveContainer(container *Container) {
+	container.Delete()
+	c.children = slice_helpers.RemoveFromList(container, c.children)
+	delete(c.childrenToPosition, container)
+	if c.FocusContainer == container {
+		c.FocusContainer = nil
+	}
 }
 
 func (c *Container) AddChild(child *Container) {
