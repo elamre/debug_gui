@@ -7,15 +7,15 @@ import (
 
 type PopupContainer struct {
 	*Container
-	movable bool
-	mX, mY  float64
-	canMove bool
+	movable   bool
+	mX, mY    float64
+	canMove   bool
+	canCancel bool
 }
 
 func NewPopupContainer(positionX, positionY, width, height float64) *PopupContainer {
 	p := PopupContainer{Container: newEmptyContainer(POS_FLOATING)}
-	p.r = 1
-	p.b = 1
+
 	p.positionX = positionX
 	p.positionY = positionY
 	p.pixelHeight = height
@@ -23,6 +23,10 @@ func NewPopupContainer(positionX, positionY, width, height float64) *PopupContai
 	p.updateSpecifics = p.Update
 	//p.Container.Update = p.Update
 	return &p
+}
+
+func (c *PopupContainer) Cancellable(canCancel bool) {
+	c.canCancel = canCancel
 }
 
 func (c *PopupContainer) SetMovable(canMove bool) {
@@ -41,7 +45,7 @@ func (c *PopupContainer) Update(input *tentsuyu.InputController, stateChanger co
 			c.mX = mX - c.positionX
 			c.mY = mY - c.positionY
 			c.movable = true
-		} else {
+		} else if c.canCancel {
 			c.ClosePopupContainer()
 			return
 		}
