@@ -7,10 +7,11 @@ import (
 
 type PopupContainer struct {
 	*Container
-	movable   bool
-	mX, mY    float64
-	canMove   bool
-	canCancel bool
+	movable        bool
+	mX, mY         float64
+	canMove        bool
+	canCancel      bool
+	setForDeletion bool
 }
 
 func NewPopupContainer(positionX, positionY, width, height float64) *PopupContainer {
@@ -34,10 +35,11 @@ func (c *PopupContainer) SetMovable(canMove bool) {
 }
 
 func (c *PopupContainer) ClosePopupContainer() {
-	c.parent.RemoveContainer(c.Container)
+	c.setForDeletion = true
 }
 
 func (c *PopupContainer) Update(input *tentsuyu.InputController, stateChanger common.StateChanger, gameState tentsuyu.GameState) {
+	c.Container.Update(input, stateChanger, gameState)
 	mX, mY := input.GetMouseCoords()
 
 	if input.LeftClick().JustPressed() && c.canMove {
@@ -57,5 +59,14 @@ func (c *PopupContainer) Update(input *tentsuyu.InputController, stateChanger co
 	if c.movable && input.LeftClick().Down() {
 		c.positionX = mX - c.mX
 		c.positionY = mY - c.mY
+		c.calculateContainerPositioning()
+		c.calculateElementPositioning()
+		for _, ch := range c.children {
+			ch.calculateContainerPositioning()
+			ch.calculateElementPositioning()
+		}
+	}
+	if c.setForDeletion {
+		c.parent.RemoveContainer(c.Container)
 	}
 }

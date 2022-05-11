@@ -20,7 +20,10 @@ var inputController *tentsuyu.InputController
 var camera *tentsuyu.Camera
 var borderContainer *gui.Container
 
+var exit bool
+
 func main() {
+	log.SetFlags(log.Flags() | log.Llongfile)
 	inputController = tentsuyu.NewInputController()
 	camera = tentsuyu.CreateCamera(WIDTH, HEIGHT)
 	borderContainer = gui.NewBaseContainer(0, 0, WIDTH, HEIGHT)
@@ -47,12 +50,21 @@ func main() {
 		lobby.RoomCreated(&composition.Room{Name: roomName})
 	}
 
-	p := gui.NewPopupContainer(20, 20, 200, 200)
-	p.SetMovable(true)
-	p.SetParent(canvasContainer)
-	canvasContainer.SetFocus(p.Container)
+	var p *gui.PopupContainer
+	p = composition.NewYesNoPopup("Exit Game?", canvasContainer, func(Action int) {
+		log.Printf("Action: %d", Action)
+		if Action == composition.NoAction {
+			p.ClosePopupContainer()
+		} else {
+			exit = true
+		}
+	})
 
-	_ = lobby
+	p.SetMovable(true)
+	//p.Cancellable(true)
+
+	//canvasContainer.SetFocus(p.Container)
+
 	if err := ebiten.RunGame(&TestGame{}); err != nil {
 		log.Fatal(err)
 	}
@@ -65,6 +77,10 @@ func (t *TestGame) Update() error {
 	inputController.Update()
 	borderContainer.Update(inputController, nil, nil)
 	//chatBox.Update(inputController, nil, nil)
+
+	if exit {
+		return fmt.Errorf("closing game")
+	}
 	return nil
 }
 

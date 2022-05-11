@@ -54,7 +54,6 @@ func NewChatComposition(positionX, positionY, width, height float64, parent *gui
 }
 
 func (c *ChatComposition) SetEnabled(enabled bool) {
-	log.Printf("%v + %v", enabled, c.enabled)
 	if !enabled && c.enabled {
 		c.previousChatEnabled = c.textElem.IsEnabled()
 

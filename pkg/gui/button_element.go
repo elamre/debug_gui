@@ -32,7 +32,7 @@ func (b *DebugButton) SetEnabled(enabled bool) { b.enabled = enabled }
 func (b *DebugButton) IsEnabled() bool         { return b.enabled }
 
 func (b *DebugButton) GetMinWidth() float64 {
-	return 100
+	return 120
 }
 func (b *DebugButton) GetMinHeight() float64 {
 	return 16
@@ -60,6 +60,9 @@ func (b *DebugButton) Update(input *tentsuyu.InputController, positionX, positio
 	}
 }
 func (b *DebugButton) Draw(positionX, positionY, width, height float64, screen *ebiten.Image, camera *tentsuyu.Camera) {
+	if width < b.GetMinWidth() {
+		width = b.GetMinWidth()
+	}
 	b.rectHelper.Reset()
 	if b.selected {
 		b.rectHelper.SetColor(float32(0), float32(1), float32(0), 1)

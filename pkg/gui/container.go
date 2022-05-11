@@ -162,10 +162,13 @@ func (c *Container) calculateContainerPositioning() {
 		height := c.children[i].percentageHeight * c.pixelHeight
 		flag := c.children[i].Flag
 
+		if flag&EXTEND_WIDTH == EXTEND_WIDTH {
+			width = c.pixelWidth
+		}
+		if flag&EXTEND_HEIGHT == EXTEND_HEIGHT {
+			height = c.pixelHeight
+		}
 		if c.Flag&STACK_HORIZONTAL != STACK_HORIZONTAL {
-			if flag&EXTEND_WIDTH == EXTEND_WIDTH {
-				width = c.pixelWidth
-			}
 			if flag&ANCHOR_HORIZONTAL_CENTER == ANCHOR_HORIZONTAL_CENTER {
 				positionX = (c.pixelWidth / 2) + c.positionX - (width / 2)
 			} else if flag&ANCHOR_LEFT == ANCHOR_LEFT {
@@ -184,9 +187,6 @@ func (c *Container) calculateContainerPositioning() {
 		}
 
 		if c.Flag&STACK_VERITCAL != STACK_VERITCAL {
-			if flag&EXTEND_HEIGHT == EXTEND_HEIGHT {
-				width = c.pixelHeight
-			}
 			if flag&ANCHOR_VERTICAL_CENTER == ANCHOR_VERTICAL_CENTER {
 				positionY = (c.pixelHeight / 2) + c.positionY - (height / 2)
 			} else if flag&ANCHOR_UP == ANCHOR_UP {
@@ -366,4 +366,67 @@ func (c *Container) AddChild(child *Container) {
 	child.parent = c
 	c.children = append(c.children, child)
 	c.calculateContainerPositioning()
+	c.calculateElementPositioning()
+	child.calculateElementPositioning()
+	child.calculateContainerPositioning()
+
+}
+
+func (c *Container) GetMinHeight() float64 {
+	c.calculateElementPositioning()
+	c.calculateContainerPositioning()
+	miHeight := float64(0)
+	if c.Flag&STACK_VERITCAL == STACK_VERITCAL {
+		// add up
+		for _, child := range c.children {
+			miHeight += child.GetMinHeight()
+		}
+		for _, elem := range c.elements {
+			miHeight += elem.GetInterface().GetMinHeight()
+		}
+	} else {
+		for _, child := range c.children {
+			tmp := child.GetMinHeight()
+			if miHeight < tmp {
+				miHeight = tmp
+			}
+		}
+		for _, elem := range c.elements {
+			pos := c.elementToPosition[elem]
+			tmp := pos.height
+			if miHeight < tmp {
+				miHeight = tmp
+			}
+		}
+	}
+	return miHeight
+}
+
+func (c *Container) GetMinWidth() float64 {
+	c.calculateElementPositioning()
+	c.calculateContainerPositioning()
+	minWidth := float64(0)
+	if c.Flag&STACK_HORIZONTAL == STACK_HORIZONTAL {
+		// add up
+		for _, child := range c.children {
+			minWidth += child.GetMinWidth()
+		}
+		for _, elem := range c.elements {
+			minWidth += elem.GetInterface().GetMinWidth()
+		}
+	} else {
+		for _, child := range c.children {
+			tmp := child.GetMinWidth()
+			if minWidth < tmp {
+				minWidth = tmp
+			}
+		}
+		for _, elem := range c.elements {
+			tmp := elem.GetInterface().GetMinWidth()
+			if minWidth < tmp {
+				minWidth = tmp
+			}
+		}
+	}
+	return minWidth
 }

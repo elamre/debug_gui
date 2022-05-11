@@ -49,3 +49,7 @@ func (e *Element) Update(input *tentsuyu.InputController, positionX, positionY, 
 func (e *Element) Draw(positionX, positionY, width, height float64, screen *ebiten.Image, camera *tentsuyu.Camera) {
 	e.element.Draw(positionX, positionY, width, height, screen, camera)
 }
+
+func (e *Element) GetInterface() ElementInterface {
+	return e.element
+}

@@ -5,6 +5,7 @@ import (
 	"github.com/elamre/tentsuyu"
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
+	"github.com/hajimehoshi/ebiten/v2/inpututil"
 	"strings"
 )
 
@@ -62,8 +63,12 @@ func (d *DebugInputElement) Update(input *tentsuyu.InputController, positionX, p
 			d.selected = false
 		}
 	}
-	if ebiten.IsKeyPressed(ebiten.KeyEnter) || !d.enabled {
-		d.selected = false
+	if inpututil.IsKeyJustPressed(ebiten.KeyEnter) || !d.enabled {
+		if ebiten.IsKeyPressed(ebiten.KeyShiftLeft) || ebiten.IsKeyPressed(ebiten.KeyShiftRight) {
+			d.Text += "\n"
+		} else {
+			d.selected = false
+		}
 	}
 	if ebiten.IsKeyPressed(ebiten.KeyBackspace) && d.enabled {
 		if !d.backspaceWas {

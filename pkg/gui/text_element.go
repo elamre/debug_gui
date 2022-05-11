@@ -52,7 +52,6 @@ func (d *DebugTextElement) SetEnabled(enabled bool) {
 }
 
 func (d *DebugTextElement) Update(input *tentsuyu.InputController, positionX, positionY, width, height float64, stateChanger common.StateChanger, gameState tentsuyu.GameState) {
-
 }
 
 func (d *DebugTextElement) Draw(positionX, positionY, width, height float64, screen *ebiten.Image, camera *tentsuyu.Camera) {
@@ -78,5 +77,5 @@ func (d *DebugTextElement) GetMinWidth() float64 {
 }
 
 func (d *DebugTextElement) GetMinHeight() float64 {
-	return PixelPerHeightCharacter
+	return PixelPerHeightCharacter * float64(len(d.Text))
 }
